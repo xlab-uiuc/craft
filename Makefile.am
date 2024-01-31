@@ -12,10 +12,11 @@ include_HEADERS = include/raft.h
 raftincludedir = $(includedir)/raft
 raftinclude_HEADERS =
 
-lib_LTLIBRARIES = libraft.la
-libraft_la_CFLAGS = $(AM_CFLAGS) -fvisibility=hidden
-libraft_la_LDFLAGS = -version-info 3:0:0
-libraft_la_SOURCES = \
+lib_LIBRARIES = libraft.a
+libraft_a_CFLAGS = $(AM_CFLAGS) -fvisibility=hidden
+# libraft_a_LIBADD = -version-info 3:0:0
+libraft_a_LIBADD =
+libraft_a_SOURCES = \
   src/byte.c \
   src/callbacks.c \
   src/client.c \
@@ -87,17 +88,17 @@ test_unit_core_LDADD = libtest.la
 if LZ4_AVAILABLE
 test_unit_core_CFLAGS += -DLZ4_AVAILABLE $(LZ4_CFLAGS)
 test_unit_core_LDFLAGS = $(LZ4_LIBS)
-libraft_la_CFLAGS += -DLZ4_AVAILABLE $(LZ4_CFLAGS)
-libraft_la_LDFLAGS += $(LZ4_LIBS)
+libraft_a_CFLAGS += -DLZ4_AVAILABLE $(LZ4_CFLAGS)
+# libraft_a_LIBADD += $(LZ4_LIBS)
 endif # LZ4_AVAILABLE
 if LZ4_ENABLED
 test_unit_core_CFLAGS += -DLZ4_ENABLED
-libraft_la_CFLAGS += -DLZ4_ENABLED
+# libraft_a_CFLAGS += -DLZ4_ENABLED
 endif # LZ4_ENABLED
 
 if FIXTURE_ENABLED
 
-libraft_la_SOURCES += src/fixture.c
+libraft_a_SOURCES += src/fixture.c
 raftinclude_HEADERS += include/raft/fixture.h
 
 check_PROGRAMS += \
@@ -129,7 +130,7 @@ test_integration_core_SOURCES = \
   test/integration/test_voter_contacts.c
 test_integration_core_CFLAGS = $(AM_CFLAGS) -Wno-conversion
 test_integration_core_LDFLAGS = -no-install
-test_integration_core_LDADD = libtest.la libraft.la
+test_integration_core_LDADD = libtest.la libraft.a
 
 test_fuzzy_core_SOURCES = \
   test/fuzzy/main_core.c \
@@ -139,13 +140,13 @@ test_fuzzy_core_SOURCES = \
   test/fuzzy/test_replication.c
 test_fuzzy_core_CFLAGS = $(AM_CFLAGS) -Wno-conversion
 test_fuzzy_core_LDFLAGS = -no-install
-test_fuzzy_core_LDADD = libtest.la libraft.la
+test_fuzzy_core_LDADD = libtest.la libraft.a
 
 endif # FIXTURE_ENABLED
 
 if UV_ENABLED
 
-libraft_la_SOURCES += \
+libraft_a_SOURCES += \
   src/uv.c \
   src/uv_append.c \
   src/uv_encoding.c \
@@ -166,7 +167,7 @@ libraft_la_SOURCES += \
   src/uv_truncate.c \
   src/uv_work.c \
   src/uv_writer.c
-libraft_la_LDFLAGS += $(UV_LIBS)
+# libraft_a_LIBADD += $(UV_LIBS)
 
 raftinclude_HEADERS += include/raft/uv.h
 
@@ -199,7 +200,7 @@ test_unit_uv_LDADD = libtest.la $(UV_LIBS)
 # directly against the libraft sources in order to test some
 # non-visible, non-API functions.
 test_integration_uv_SOURCES = \
-  ${libraft_la_SOURCES} \
+  ${libraft_a_SOURCES} \
   test/integration/main_uv.c \
   test/integration/test_uv_init.c \
   test/integration/test_uv_append.c \
@@ -232,8 +233,8 @@ endif # LZ4_ENABLED
 endif # UV_ENABLED
 
 if BACKTRACE_ENABLED
-libraft_la_CFLAGS += -DRAFT_ASSERT_WITH_BACKTRACE
-libraft_la_LDFLAGS += -lbacktrace
+libraft_a_CFLAGS += -DRAFT_ASSERT_WITH_BACKTRACE
+# libraft_a_LIBADD += -lbacktrace
 endif # BACKTRACE_ENABLED
 
 if EXAMPLE_ENABLED
@@ -244,7 +245,19 @@ bin_PROGRAMS += \
 
 example_server_SOURCES = example/server.c
 example_server_LDFLAGS = -no-install
-example_server_LDADD = libraft.la $(UV_LIBS)
+example_server_LDADD = libraft.a $(UV_LIBS)
+
+if UV_ENABLED
+example_server_LDADD += $(UV_LIBS)
+endif # UV_ENABLED
+
+if BACKTRACE_ENABLED
+example_server_LDADD += -lbacktrace
+endif # BACKTRACE_ENABLED
+
+if LZ4_AVAILABLE
+example_server_LDADD += $(LZ4_LIBS)
+endif # LZ4_AVAILABLE
 
 example_cluster_SOURCES = example/cluster.c
 
